@@ -5,7 +5,7 @@ from torch.nn import functional as F
 # hyperparameters
 batch_size = 32 # how many independent sequences will we process in parallel?
 block_size = 8 # what is the maximum context length for predictions?
-max_iters = 3000
+max_iters = 5000
 eval_interval = 300
 learning_rate = 1e-2
 n_embd = 32
@@ -65,12 +65,15 @@ class BigramLanguageModel(nn.Module):
         super().__init__()
         # each token directly reads off the logits for the next token from a lookup table
         self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
+        self.position_embedding_table = nn.Embedding(block_size, n_embd)
         self.lm_head = nn.Linear(n_embd,vocab_size)
 
     def forward(self, idx, targets=None):
-
+        B, T = idx.shape
         # idx and targets are both (B,T) tensor of integers
         tok_emb = self.token_embedding_table(idx) # (B,T,C)
+        pos_emb = self.position_embedding_table(torch.arange(T, device=device))
+        x = tok_emb + pos_emb # (B,T,C)
         logits = self.lm_head(tok_emb) # (B,T,vocab_size) 
 
         if targets is None:
